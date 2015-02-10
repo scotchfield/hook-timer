@@ -13,6 +13,8 @@ class WP_HookTimer {
 	private $time_obj;
 	private $stack;
 
+	private $priority;
+
 	/**
 	 * The domain for localization.
 	 */
@@ -35,6 +37,8 @@ class WP_HookTimer {
 		$this->time_obj = array();
 		$this->stack = array();
 
+		$this->priority = 999999999;
+
 		add_action( 'all', array( $this, 'time_start' ) );
 		add_action( 'shutdown', array( $this, 'store' ) );
 
@@ -42,18 +46,30 @@ class WP_HookTimer {
 	}
 
 	public function time_start() {
-		$this->stack[] = microtime( true );
+		$this->stack[] = array( microtime( true ), current_filter(), $this->priority );
 
 		// Props to Viper007Bond for this approach, who built 'whatissoslow.php'
 		// https://gist.github.com/Viper007Bond/5192117
-		add_filter( current_filter(), array( $this, 'time_end' ), 99999 );
+		add_filter( current_filter(), array( $this, 'time_end' ), $this->priority );
+
+		$this->priority -= 1;
 	}
 
 	public function time_end( $data ) {
-		remove_filter( current_filter(), array( $this, 'time_end' ), 99999 );
+		$time = array_pop( $this->stack );
 
-		$start_time = array_pop( $this->stack );
+		$start_time = $time[ 0 ];
+		$filter = $time[ 1 ];
+		$priority = $time[ 2 ];
 		$end_time = microtime( true );
+
+		$result = remove_filter( current_filter(), array( $this, 'time_end' ), $priority );
+		if ( ! $result ) {
+			wp_die( 'Hook Timer: Couldn\'t remove the filter, we\'re in a bad state!' );
+		}
+		if ( current_filter() !== $filter ) {
+			wp_die( 'Hook Timer: Filters aren\'t matching up, we\'re in a bad state!' );
+		}
 
 		$delta_time = $end_time - $start_time;
 		array_push( $this->time_obj, array( $delta_time, $end_time, current_filter() ) );
