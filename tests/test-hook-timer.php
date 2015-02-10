@@ -80,6 +80,8 @@ class TestHookTimer extends WP_UnitTestCase {
 
 	public function filterTimingB( $data ) {
 		sleep( 2 );
+
+		return $data;
 	}
 
 	public function testFilterTiming() {
