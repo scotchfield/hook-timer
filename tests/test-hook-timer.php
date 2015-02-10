@@ -72,4 +72,30 @@ class TestHookTimer extends WP_UnitTestCase {
 		$this->assertNotEmpty( $result_two );
 	}
 
+	public function filterTimingA( $data ) {
+		sleep( 1 );
+
+		return apply_filters( 'filter_b', $data );
+	}
+
+	public function filterTimingB( $data ) {
+		sleep( 2 );
+	}
+
+	public function testFilterTiming() {
+		add_filter( 'filter_a', array( $this, 'filterTimingA' ) );
+		add_filter( 'filter_b', array( $this, 'filterTimingB' ) );
+
+		apply_filters( 'filter_a', '' );
+
+		$result = $this->ht->get_times_by_hook( 'filter_a' );
+		$this->assertEquals( 3, round( $result[ 0 ][ 0 ] ) );
+
+		$result = $this->ht->get_times_by_hook( 'filter_b' );
+		$this->assertEquals( 2, round( $result[ 0 ][ 0 ] ) );
+
+		remove_filter( 'filter_b', array( $this, 'filterTimingB' ) );
+		remove_filter( 'filter_a', array( $this, 'filterTimingA' ) );
+	}
+
 }
