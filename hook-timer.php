@@ -10,26 +10,28 @@
  */
 class WP_HookTimer {
 
-	/**
-	 * Store reference to singleton object.
-	 */
-	private static $instance = null;
+	private $time_obj;
+	private $stack;
 
 	/**
 	 * The domain for localization.
 	 */
 	const DOMAIN = 'hooktimer';
 
+	public static function getInstance() {
+		static $instance = null;
+
+		if ( null === $instance ) {
+			$instance = new static();
+		}
+
+		return $instance;
+	}
+
 	/**
 	 * Instantiate, if necessary, and add hooks.
 	 */
-	public function __construct() {
-		if ( isset( self::$instance ) ) {
-			wp_die( esc_html__( 'The WP_HookTimer class has already been instantiated.', self::DOMAIN ) );
-		}
-
-		self::$instance = $this;
-
+	protected function __construct() {
 		$this->time_obj = array();
 		$this->stack = array();
 
@@ -54,7 +56,6 @@ class WP_HookTimer {
 		$end_time = microtime( true );
 
 		$delta_time = $end_time - $start_time;
-
 		array_push( $this->time_obj, array( $delta_time, $end_time, current_filter() ) );
 
 		return $data;
@@ -62,6 +63,26 @@ class WP_HookTimer {
 
 	public function store() {
 		update_option( self::DOMAIN . '_times', $this->time_obj );
+	}
+
+	public function get_all_times() {
+		return $this->time_obj;
+	}
+
+	public function clear_times() {
+		$this->time_obj = array();
+	}
+
+	public function get_times_by_hook( $hook ) {
+		$hook_obj = array();
+
+		foreach ( $this->time_obj as $time ) {
+			if ( $time[2] === $hook ) {
+				$hook_obj[] = $time;
+			}
+		}
+
+		return $hook_obj;
 	}
 
 	/**
@@ -90,4 +111,4 @@ class WP_HookTimer {
 
 }
 
-$wp_hooktimer = new WP_HookTimer();
+$wp_hooktimer = WP_HookTimer::getInstance();
