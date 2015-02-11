@@ -3,7 +3,7 @@
  * Plugin Name: Hook Timer
  * Plugin URI: http://scotchfield.com/
  * Description: Track the time elapsed for each WordPress hook
- * Version: 0.1
+ * Version: 1.0
  * Author: Scott Grant
  * Author URI: http://scotchfield.com/
  * License: GPL2
